@@ -36,10 +36,18 @@ app.post('/api/chat', async function(req, res) {
         ]
       })
     })
+const data = await response.json()
+console.log('Groq response:', JSON.stringify(data))
 
-    const data = await response.json()
-    const aiReply = data.choices[0].message.content
-    res.json({ reply: aiReply })
+if (data.choices && data.choices[0]) {
+  const aiReply = data.choices[0].message.content
+  res.json({ reply: aiReply })
+} else if (data.error) {
+  console.log('Groq error:', data.error)
+  res.json({ error: data.error.message })
+} else {
+  res.json({ error: 'No reply from AI' })
+}
 
   } catch (error) {
     console.log('Error:', error)
