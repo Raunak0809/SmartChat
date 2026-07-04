@@ -1,25 +1,78 @@
-// ===== Find HTML elements =====
 const sendBtn = document.getElementById('send-btn')
 const clearBtn = document.getElementById('clear-btn')
 const userInput = document.getElementById('user-input')
 const chatBox = document.getElementById('chat-box')
+const botName = document.getElementById('bot-name')
+const personalityBtns = document.querySelectorAll('.personality-btn')
 
-// NO API KEY HERE ✅
-// API key is safely in server/.env
+// ===== AI Personalities =====
+const personalities = {
+  smart: {
+    name: '🤖 SmartChat AI',
+    prompt: 'You are SmartChat AI, a helpful and intelligent assistant. Give clear, accurate and helpful answers.',
+    welcome: 'Hello! I am SmartChat AI. Ask me anything!'
+  },
+  funny: {
+    name: '😄 FunnyBot AI',
+    prompt: 'You are FunnyBot, a hilarious AI assistant. Answer every question with humor, jokes and fun while still being helpful. Use emojis a lot!',
+    welcome: 'Heyyy! 😂 I am FunnyBot! Ask me anything and I will make you laugh while helping you! 🎉'
+  },
+  study: {
+    name: '👨‍🏫 Study AI',
+    prompt: 'You are Study AI, a strict but helpful teacher. Explain concepts clearly with examples. Break down complex topics simply. Always encourage learning.',
+    welcome: 'Welcome student! 📚 I am your Study AI. Ask me any concept and I will explain it clearly!'
+  },
+  career: {
+    name: '💼 Career AI',
+    prompt: 'You are Career AI, an expert career counselor for engineering students in India. Give practical advice about jobs, skills, resume, internships, and career growth.',
+    welcome: 'Hello! 💼 I am Career AI. Ask me about jobs, internships, resume tips, or career advice!'
+  },
+  interview: {
+    name: '🎯 Interview AI',
+    prompt: 'You are Interview AI, an expert interview coach. Help students prepare for technical and HR interviews. Give sample questions, model answers, and tips.',
+    welcome: 'Ready to crack your interview? 🎯 I am Interview AI! Ask me any interview question!'
+  }
+}
 
-// ===== Welcome message =====
+// Current personality
+let currentPersonality = 'smart'
+
+// ===== Show welcome message =====
 window.onload = function() {
+  showWelcome(personalities.smart.welcome)
+}
+
+function showWelcome(message) {
   const welcomeDiv = document.createElement('div')
   welcomeDiv.classList.add('welcome')
-  welcomeDiv.innerHTML = `
-    🤖 <strong>Welcome to SmartChat AI!</strong><br>
-    I am your personal AI assistant.<br>
-    Ask me anything — I am here to help!
-  `
+  welcomeDiv.innerHTML = `🤖 <strong>${message}</strong>`
   chatBox.appendChild(welcomeDiv)
 }
 
-// ===== Get current time =====
+// ===== Personality buttons =====
+personalityBtns.forEach(function(btn) {
+  btn.addEventListener('click', function() {
+
+    // Remove active from all buttons
+    personalityBtns.forEach(b => b.classList.remove('active'))
+
+    // Add active to clicked button
+    btn.classList.add('active')
+
+    // Change personality
+    currentPersonality = btn.dataset.personality
+    const selected = personalities[currentPersonality]
+
+    // Update header name
+    botName.textContent = selected.name
+
+    // Clear chat and show new welcome
+    chatBox.innerHTML = ''
+    showWelcome(selected.welcome)
+  })
+})
+
+// ===== Get time =====
 function getTime() {
   const now = new Date()
   let hours = now.getHours()
@@ -30,31 +83,23 @@ function getTime() {
   return hours + ':' + minutes + ' ' + ampm
 }
 
-// ===== Send button click =====
+// ===== Send button =====
 sendBtn.addEventListener('click', function() {
   sendMessage()
 })
 
 // ===== Enter key =====
 userInput.addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') {
-    sendMessage()
-  }
+  if (e.key === 'Enter') sendMessage()
 })
 
 // ===== Clear button =====
 clearBtn.addEventListener('click', function() {
   chatBox.innerHTML = ''
-  const welcomeDiv = document.createElement('div')
-  welcomeDiv.classList.add('welcome')
-  welcomeDiv.innerHTML = `
-    🤖 <strong>Chat cleared!</strong><br>
-    Start a new conversation below.
-  `
-  chatBox.appendChild(welcomeDiv)
+  showWelcome(personalities[currentPersonality].welcome)
 })
 
-// ===== Main send function =====
+// ===== Send message =====
 function sendMessage() {
   const message = userInput.value.trim()
   if (message === '') return
@@ -62,12 +107,10 @@ function sendMessage() {
   addMessage(message, 'user')
   userInput.value = ''
   addMessage('AI is thinking...', 'loading')
-
-  // Calls YOUR backend ✅
   callBackend(message)
 }
 
-// ===== Add message with timestamp =====
+// ===== Add message =====
 function addMessage(text, sender) {
 
   if (sender === 'loading') {
@@ -98,8 +141,11 @@ function addMessage(text, sender) {
   chatBox.scrollTop = chatBox.scrollHeight
 }
 
-// ===== Call YOUR backend =====
+// ===== Call backend =====
 async function callBackend(message) {
+
+  // Send personality prompt with message
+  const selectedPrompt = personalities[currentPersonality].prompt
 
   try {
     const response = await fetch('https://smartchat-dwzm.onrender.com/api/chat', {
@@ -108,7 +154,8 @@ async function callBackend(message) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: message
+        message: message,
+        personality: selectedPrompt
       })
     })
 

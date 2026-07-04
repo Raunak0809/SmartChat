@@ -1,4 +1,3 @@
-/* ===== RESET - removes browser default ugly styles ===== */
 * {
   margin: 0;
   padding: 0;
@@ -6,7 +5,6 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* ===== PAGE BACKGROUND ===== */
 body {
   background-color: #1a1a2e;
   display: flex;
@@ -15,10 +13,9 @@ body {
   height: 100vh;
 }
 
-/* ===== MAIN CHAT BOX ===== */
 .chat-container {
   width: 420px;
-  height: 600px;
+  height: 650px;
   background-color: #16213e;
   border-radius: 20px;
   display: flex;
@@ -27,44 +24,103 @@ body {
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
 
-/* ===== TOP HEADER ===== */
+/* ===== HEADER ===== */
 .chat-header {
   background: linear-gradient(135deg, #0f3460, #533483);
-  padding: 20px;
-  text-align: center;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.chat-header h2 {
+.header-info h2 {
   color: white;
-  font-size: 20px;
+  font-size: 18px;
 }
 
-.chat-header p {
-  color: #a0a0b0;
-  font-size: 13px;
-  margin-top: 4px;
+.status {
+  color: #90ee90;
+  font-size: 12px;
+  margin-top: 3px;
 }
 
-/* ===== MESSAGE AREA WITH YOUR PHOTO ===== */
+#clear-btn {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+#clear-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ===== PERSONALITY BAR ===== */
+.personality-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #0f3460;
+  overflow-x: auto;
+  border-bottom: 1px solid #1a1a4e;
+}
+
+.personality-btn {
+  padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  background: transparent;
+  color: #a0a0c0;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.personality-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.personality-btn.active {
+  background: linear-gradient(135deg, #0f3460, #533483);
+  color: white;
+  border-color: #533483;
+}
+
+/* ===== MESSAGE AREA ===== */
 .chat-box {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-
-  /* YOUR PHOTO AS BACKGROUND */
+  gap: 8px;
   background-image: url('image.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-
-  /* DARK OVERLAY so messages are readable */
   box-shadow: inset 0 0 0 1000px rgba(0,0,0,0.45);
 }
 
-/* ===== EVERY MESSAGE BUBBLE ===== */
+.message-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.message-wrapper.user-wrapper {
+  align-items: flex-end;
+}
+
+.message-wrapper.ai-wrapper {
+  align-items: flex-start;
+}
+
 .message {
   max-width: 75%;
   padding: 12px 16px;
@@ -74,23 +130,24 @@ body {
   word-wrap: break-word;
 }
 
-/* ===== USER MESSAGE — right side ===== */
 .user-message {
   background: linear-gradient(135deg, #0f3460, #533483);
   color: white;
-  align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
 
-/* ===== AI MESSAGE — left side ===== */
 .ai-message {
   background-color: #0f3460;
   color: #e0e0e0;
-  align-self: flex-start;
   border-bottom-left-radius: 4px;
 }
 
-/* ===== LOADING ANIMATION ===== */
+.timestamp {
+  font-size: 10px;
+  color: #8888aa;
+  padding: 0 4px;
+}
+
 .loading {
   background-color: #0f3460;
   color: #a0a0b0;
@@ -98,9 +155,22 @@ body {
   border-bottom-left-radius: 4px;
   font-style: italic;
   font-size: 13px;
+  padding: 12px 16px;
+  border-radius: 18px;
 }
 
-/* ===== BOTTOM INPUT AREA ===== */
+.welcome {
+  background: rgba(83, 52, 131, 0.4);
+  color: #c0c0e0;
+  text-align: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  border: 1px solid rgba(83, 52, 131, 0.5);
+}
+
+/* ===== INPUT AREA ===== */
 .chat-input {
   display: flex;
   padding: 16px;
@@ -109,7 +179,6 @@ body {
   border-top: 1px solid #1a1a4e;
 }
 
-/* ===== TEXT INPUT BOX ===== */
 .chat-input input {
   flex: 1;
   padding: 12px 16px;
@@ -125,7 +194,6 @@ body {
   color: #6060a0;
 }
 
-/* ===== SEND BUTTON ===== */
 .chat-input button {
   padding: 12px 20px;
   background: linear-gradient(135deg, #0f3460, #533483);

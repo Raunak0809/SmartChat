@@ -10,25 +10,45 @@
 
   <body>
 
-    <!-- Main container box -->
     <div class="chat-container">
 
-      <!-- Top header bar -->
+      <!-- Header -->
       <div class="chat-header">
-        <h2>🤖 SmartChat AI </h2>
-        <p>Always online</p>
+        <div class="header-info">
+          <h2 id="bot-name">🤖 SmartChat AI</h2>
+          <p class="status">● Always online</p>
+        </div>
+        <button id="clear-btn">Clear</button>
       </div>
 
-      <!-- Messages appear here -->
-      <div class="chat-box" id="chat-box">
+      <!-- Personality Selector -->
+      <div class="personality-bar">
+        <button class="personality-btn active" data-personality="smart">
+          🤖 Smart
+        </button>
+        <button class="personality-btn" data-personality="funny">
+          😄 Funny
+        </button>
+        <button class="personality-btn" data-personality="study">
+          👨‍🏫 Study
+        </button>
+        <button class="personality-btn" data-personality="career">
+          💼 Career
+        </button>
+        <button class="personality-btn" data-personality="interview">
+          🎯 Interview
+        </button>
       </div>
 
-      <!-- Input area at bottom -->
+      <!-- Messages area -->
+      <div class="chat-box" id="chat-box"></div>
+
+      <!-- Input area -->
       <div class="chat-input">
-        <input 
-          type="text" 
-          id="user-input" 
-          placeholder="Type a message..." 
+        <input
+          type="text"
+          id="user-input"
+          placeholder="Type a message..."
         />
         <button id="send-btn">Send ➤</button>
       </div>
