@@ -1,15 +1,16 @@
-// ===== Find HTML elements =====
 const sendBtn = document.getElementById('send-btn')
 const clearBtn = document.getElementById('clear-btn')
 const voiceBtn = document.getElementById('voice-btn')
 const cameraBtn = document.getElementById('camera-btn')
+const muteBtn = document.getElementById('mute-btn')
 const fileInput = document.getElementById('file-input')
 const userInput = document.getElementById('user-input')
 const chatBox = document.getElementById('chat-box')
 const botName = document.getElementById('bot-name')
 const personalityBtns = document.querySelectorAll('.personality-btn')
 
-// ===== AI Personalities =====
+let isMuted = false
+
 const personalities = {
   smart: {
     name: '🤖 SmartChat AI',
@@ -38,13 +39,9 @@ const personalities = {
   }
 }
 
-// Current personality
 let currentPersonality = 'smart'
-
-// Store captured image
 let capturedImage = null
 
-// ===== Welcome message on load =====
 window.onload = function() {
   showWelcome(personalities.smart.welcome)
 }
@@ -56,7 +53,6 @@ function showWelcome(message) {
   chatBox.appendChild(welcomeDiv)
 }
 
-// ===== Personality buttons =====
 personalityBtns.forEach(function(btn) {
   btn.addEventListener('click', function() {
     personalityBtns.forEach(b => b.classList.remove('active'))
@@ -65,11 +61,12 @@ personalityBtns.forEach(function(btn) {
     const selected = personalities[currentPersonality]
     botName.textContent = selected.name
     chatBox.innerHTML = ''
+    capturedImage = null
+    window.speechSynthesis.cancel()
     showWelcome(selected.welcome)
   })
 })
 
-// ===== Get time =====
 function getTime() {
   const now = new Date()
   let hours = now.getHours()
@@ -80,29 +77,37 @@ function getTime() {
   return hours + ':' + minutes + ' ' + ampm
 }
 
-// ===== Send button =====
 sendBtn.addEventListener('click', function() {
   sendMessage()
 })
 
-// ===== Enter key =====
 userInput.addEventListener('keypress', function(e) {
   if (e.key === 'Enter') sendMessage()
 })
 
-// ===== Clear button =====
 clearBtn.addEventListener('click', function() {
   chatBox.innerHTML = ''
   capturedImage = null
+  window.speechSynthesis.cancel()
   showWelcome(personalities[currentPersonality].welcome)
 })
 
-// ===== Camera button =====
+muteBtn.addEventListener('click', function() {
+  isMuted = !isMuted
+  if (isMuted) {
+    muteBtn.textContent = '🔇'
+    muteBtn.classList.add('muted')
+    window.speechSynthesis.cancel()
+  } else {
+    muteBtn.textContent = '🔊'
+    muteBtn.classList.remove('muted')
+  }
+})
+
 cameraBtn.addEventListener('click', function() {
   fileInput.click()
 })
 
-// ===== File selected =====
 fileInput.addEventListener('change', function(e) {
   const file = e.target.files[0]
   if (!file) return
@@ -111,7 +116,6 @@ fileInput.addEventListener('change', function(e) {
   reader.onload = function(event) {
     capturedImage = event.target.result
 
-    // Show image preview in chat
     const wrapper = document.createElement('div')
     wrapper.classList.add('message-wrapper', 'user-wrapper')
 
@@ -141,7 +145,6 @@ fileInput.addEventListener('change', function(e) {
     chatBox.appendChild(wrapper)
     chatBox.scrollTop = chatBox.scrollHeight
 
-    // Send image to AI
     addMessage('AI is analyzing your image...', 'loading')
     callBackendWithImage(capturedImage)
   }
@@ -149,20 +152,39 @@ fileInput.addEventListener('change', function(e) {
   fileInput.value = ''
 })
 
-// ===== Send message =====
 function sendMessage() {
   const message = userInput.value.trim()
   if (message === '') return
-
   addMessage(message, 'user')
   userInput.value = ''
   addMessage('AI is thinking...', 'loading')
   callBackend(message)
 }
 
-// ===== Add message =====
-function addMessage(text, sender) {
+function speakText(text) {
+  if (isMuted) return
 
+  window.speechSynthesis.cancel()
+
+  const speech = new SpeechSynthesisUtterance()
+  speech.text = text
+  speech.lang = 'en-IN'
+  speech.rate = 1.0
+  speech.pitch = 1.0
+  speech.volume = 1.0
+
+  const voices = window.speechSynthesis.getVoices()
+  const englishVoice = voices.find(voice =>
+    voice.lang.includes('en')
+  )
+  if (englishVoice) {
+    speech.voice = englishVoice
+  }
+
+  window.speechSynthesis.speak(speech)
+}
+
+function addMessage(text, sender) {
   if (sender === 'loading') {
     const loadingDiv = document.createElement('div')
     loadingDiv.classList.add('loading')
@@ -191,7 +213,6 @@ function addMessage(text, sender) {
   chatBox.scrollTop = chatBox.scrollHeight
 }
 
-// ===== Call backend with text =====
 async function callBackend(message) {
   const selectedPrompt = personalities[currentPersonality].prompt
 
@@ -211,6 +232,7 @@ async function callBackend(message) {
 
     if (data.reply) {
       addMessage(data.reply, 'ai')
+      speakText(data.reply)
     } else if (data.error) {
       addMessage('Error: ' + data.error, 'ai')
     }
@@ -222,7 +244,6 @@ async function callBackend(message) {
   }
 }
 
-// ===== Call backend with image =====
 async function callBackendWithImage(imageBase64) {
   try {
     const response = await fetch('https://smartchat-dwzm.onrender.com/api/chat-image', {
@@ -240,6 +261,7 @@ async function callBackendWithImage(imageBase64) {
 
     if (data.reply) {
       addMessage(data.reply, 'ai')
+      speakText(data.reply)
     } else if (data.error) {
       addMessage('Error: ' + data.error, 'ai')
     }
@@ -251,7 +273,6 @@ async function callBackendWithImage(imageBase64) {
   }
 }
 
-// ===== VOICE INPUT =====
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 
   const SpeechRecognition = window.SpeechRecognition
