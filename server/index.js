@@ -79,7 +79,7 @@ app.post('/api/chat-image', async function(req, res) {
           'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
         },
         body: JSON.stringify({
-          model: 'llama-3.2-11b-vision-preview',
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
           messages: [
             {
               role: 'user',
@@ -117,7 +117,6 @@ app.post('/api/chat-image', async function(req, res) {
     res.json({ error: error.message })
   }
 })
-
 app.listen(3000, function() {
   console.log('SmartChat backend running on port 3000!')
 })
