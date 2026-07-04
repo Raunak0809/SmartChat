@@ -1,23 +1,11 @@
-const express = require('express')
-const cors = require('cors')
-require('dotenv').config()
+// ===== Image Analysis Route =====
+app.post('/api/chat-image', async function(req, res) {
 
-const app = express()
-
-app.use(cors())
-app.use(express.json())
-
-app.get('/', function(req, res) {
-  res.json({ message: 'SmartChat backend running!' })
-})
-
-app.post('/api/chat', async function(req, res) {
-
-  const userMessage = req.body.message
+  const imageBase64 = req.body.image
   const personality = req.body.personality
 
-  if (!userMessage) {
-    return res.json({ error: 'No message provided' })
+  if (!imageBase64) {
+    return res.json({ error: 'No image provided' })
   }
 
   try {
@@ -28,15 +16,26 @@ app.post('/api/chat', async function(req, res) {
         'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
         messages: [
           {
             role: 'system',
-            content: personality || 'You are SmartChat AI, a helpful assistant.'
+            content: personality || 'You are SmartChat AI. Analyze images and answer helpfully.'
           },
           {
             role: 'user',
-            content: userMessage
+            content: [
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageBase64
+                }
+              },
+              {
+                type: 'text',
+                text: 'Please analyze this image and describe what you see. If there is any text, math problem, or question in the image, please answer it.'
+              }
+            ]
           }
         ]
       })
@@ -45,20 +44,15 @@ app.post('/api/chat', async function(req, res) {
     const data = await response.json()
 
     if (data.choices && data.choices[0]) {
-      const aiReply = data.choices[0].message.content
-      res.json({ reply: aiReply })
+      res.json({ reply: data.choices[0].message.content })
     } else if (data.error) {
       res.json({ error: data.error.message })
     } else {
-      res.json({ error: 'No reply from AI' })
+      res.json({ error: 'Could not analyze image' })
     }
 
   } catch (error) {
-    console.log('Error:', error)
+    console.log('Image error:', error)
     res.json({ error: 'Something went wrong' })
   }
-})
-
-app.listen(3000, function() {
-  console.log('SmartChat backend running on port 3000!')
 })

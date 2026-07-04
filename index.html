@@ -45,10 +45,18 @@
 
       <!-- Input area -->
       <div class="chat-input">
+        <button id="voice-btn" title="Voice Input">🎤</button>
+        <button id="camera-btn" title="Camera">📷</button>
+        <input
+          type="file"
+          id="file-input"
+          accept="image/*"
+          style="display:none"
+        />
         <input
           type="text"
           id="user-input"
-          placeholder="Type a message..."
+          placeholder="Type or speak..."
         />
         <button id="send-btn">Send ➤</button>
       </div>
