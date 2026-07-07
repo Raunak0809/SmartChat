@@ -42,8 +42,28 @@ const personalities = {
 let currentPersonality = 'smart'
 let capturedImage = null
 
+// ===== Load History on Page Load =====
 window.onload = function() {
-  showWelcome(personalities.smart.welcome)
+  loadHistory()
+}
+
+async function loadHistory() {
+  try {
+    const response = await fetch('https://smartchat-dwzm.onrender.com/api/history')
+    const data = await response.json()
+
+    if (data.messages && data.messages.length > 0) {
+      data.messages.forEach(function(msg) {
+        addMessage(msg.text, msg.sender)
+      })
+    } else {
+      showWelcome(personalities.smart.welcome)
+    }
+
+  } catch (error) {
+    console.log('History error:', error)
+    showWelcome(personalities.smart.welcome)
+  }
 }
 
 function showWelcome(message) {
@@ -85,10 +105,20 @@ userInput.addEventListener('keypress', function(e) {
   if (e.key === 'Enter') sendMessage()
 })
 
-clearBtn.addEventListener('click', function() {
+clearBtn.addEventListener('click', async function() {
   chatBox.innerHTML = ''
   capturedImage = null
   window.speechSynthesis.cancel()
+
+  // Clear history from MongoDB
+  try {
+    await fetch('https://smartchat-dwzm.onrender.com/api/history', {
+      method: 'DELETE'
+    })
+  } catch (error) {
+    console.log('Clear error:', error)
+  }
+
   showWelcome(personalities[currentPersonality].welcome)
 })
 
