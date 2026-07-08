@@ -1,5 +1,7 @@
 const express = require('express')
 const cors = require('cors')
+const mongoose = require('mongoose')
+
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config()
 }
@@ -9,10 +11,66 @@ const app = express()
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
+// ===== Debug Environment Variables =====
+const mongoURI = process.env.MONGODB_URI
+
+console.log('MONGODB_URI exists:', !!mongoURI)
+console.log('GROQ_KEY exists:', !!process.env.GROQ_API_KEY)
+
+// ===== Connect to MongoDB =====
+if (mongoURI) {
+  mongoose.connect(mongoURI)
+    .then(function() {
+      console.log('MongoDB connected!')
+    })
+    .catch(function(error) {
+      console.log('MongoDB error:', error.message)
+    })
+} else {
+  console.log('No MongoDB URI found!')
+}
+
+// ===== Message Schema =====
+const messageSchema = new mongoose.Schema({
+  sender: String,
+  text: String,
+  personality: String,
+  timestamp: {
+    type: Date,
+    default: Date.now
+  }
+})
+
+const Message = mongoose.model('Message', messageSchema)
+
+// ===== Test Route =====
 app.get('/', function(req, res) {
   res.json({ message: 'SmartChat backend running!' })
 })
 
+// ===== Get Chat History =====
+app.get('/api/history', async function(req, res) {
+  try {
+    const messages = await Message.find()
+      .sort({ timestamp: 1 })
+      .limit(50)
+    res.json({ messages: messages })
+  } catch (error) {
+    res.json({ error: error.message })
+  }
+})
+
+// ===== Clear Chat History =====
+app.delete('/api/history', async function(req, res) {
+  try {
+    await Message.deleteMany({})
+    res.json({ message: 'History cleared!' })
+  } catch (error) {
+    res.json({ error: error.message })
+  }
+})
+
+// ===== Text Chat Route =====
 app.post('/api/chat', async function(req, res) {
   const userMessage = req.body.message
   const personality = req.body.personality
@@ -22,6 +80,15 @@ app.post('/api/chat', async function(req, res) {
   }
 
   try {
+    // Save user message to MongoDB
+    if (mongoURI) {
+      await Message.create({
+        sender: 'user',
+        text: userMessage,
+        personality: personality
+      })
+    }
+
     const response = await fetch(
       'https://api.groq.com/openai/v1/chat/completions',
       {
@@ -47,10 +114,20 @@ app.post('/api/chat', async function(req, res) {
     )
 
     const data = await response.json()
-    console.log('Chat response:', JSON.stringify(data))
 
     if (data.choices && data.choices[0]) {
-      res.json({ reply: data.choices[0].message.content })
+      const aiReply = data.choices[0].message.content
+
+      // Save AI reply to MongoDB
+      if (mongoURI) {
+        await Message.create({
+          sender: 'ai',
+          text: aiReply,
+          personality: personality
+        })
+      }
+
+      res.json({ reply: aiReply })
     } else if (data.error) {
       res.json({ error: data.error.message })
     } else {
@@ -63,6 +140,7 @@ app.post('/api/chat', async function(req, res) {
   }
 })
 
+// ===== Image Analysis Route =====
 app.post('/api/chat-image', async function(req, res) {
   const imageBase64 = req.body.image
   const personality = req.body.personality
@@ -72,6 +150,15 @@ app.post('/api/chat-image', async function(req, res) {
   }
 
   try {
+    // Save user image message
+    if (mongoURI) {
+      await Message.create({
+        sender: 'user',
+        text: '📷 Image uploaded',
+        personality: personality
+      })
+    }
+
     const response = await fetch(
       'https://api.groq.com/openai/v1/chat/completions',
       {
@@ -104,10 +191,20 @@ app.post('/api/chat-image', async function(req, res) {
     )
 
     const data = await response.json()
-    console.log('Image response:', JSON.stringify(data))
 
     if (data.choices && data.choices[0]) {
-      res.json({ reply: data.choices[0].message.content })
+      const aiReply = data.choices[0].message.content
+
+      // Save AI image reply
+      if (mongoURI) {
+        await Message.create({
+          sender: 'ai',
+          text: aiReply,
+          personality: personality
+        })
+      }
+
+      res.json({ reply: aiReply })
     } else if (data.error) {
       res.json({ error: data.error.message })
     } else {
@@ -119,6 +216,7 @@ app.post('/api/chat-image', async function(req, res) {
     res.json({ error: error.message })
   }
 })
+
 app.listen(3000, function() {
   console.log('SmartChat backend running on port 3000!')
 })
