@@ -32,6 +32,9 @@ const logoutBtn = document.getElementById('logout-btn')
 const userNameDisplay = document.getElementById('user-name-display')
 const toggleSidebar = document.getElementById('toggle-sidebar')
 const sidebar = document.getElementById('sidebar')
+const imagePreviewBar = document.getElementById('image-preview-bar')
+const previewImg = document.getElementById('preview-img')
+const removeImageBtn = document.getElementById('remove-image-btn')
 
 // ===== State =====
 let token = localStorage.getItem('token')
@@ -39,37 +42,38 @@ let currentUser = JSON.parse(localStorage.getItem('user') || 'null')
 let currentChatId = null
 let isMuted = false
 let currentPersonality = 'smart'
+let pendingImage = null
 
 // ===== Personalities =====
 const personalities = {
   smart: {
     name: '🤖 SmartChat AI',
-    prompt: 'You are SmartChat AI, a helpful and intelligent assistant.',
+    prompt: 'You are SmartChat AI, a helpful and intelligent assistant. Give clear, accurate and helpful answers.',
     welcome: 'Hello! I am SmartChat AI. Ask me anything!'
   },
   funny: {
     name: '😄 FunnyBot AI',
-    prompt: 'You are FunnyBot, a hilarious AI assistant. Use humor and emojis!',
+    prompt: 'You are FunnyBot, a hilarious AI assistant. Answer with humor and emojis!',
     welcome: 'Heyyy! 😂 I am FunnyBot! Ask me anything!'
   },
   study: {
     name: '👨‍🏫 Study AI',
-    prompt: 'You are Study AI, a helpful teacher. Explain concepts clearly.',
+    prompt: 'You are Study AI, a helpful teacher. Explain concepts clearly with examples.',
     welcome: 'Welcome student! 📚 Ask me any concept!'
   },
   career: {
     name: '💼 Career AI',
-    prompt: 'You are Career AI, an expert career counselor for Indian students.',
+    prompt: 'You are Career AI, an expert career counselor for Indian engineering students.',
     welcome: 'Hello! 💼 Ask me about jobs or career advice!'
   },
   interview: {
     name: '🎯 Interview AI',
-    prompt: 'You are Interview AI, an expert interview coach.',
+    prompt: 'You are Interview AI, an expert interview coach for engineering students.',
     welcome: 'Ready to crack your interview? 🎯 Ask me anything!'
   }
 }
 
-// ===== Check if logged in =====
+// ===== Check Login on Load =====
 window.onload = function() {
   if (token && currentUser) {
     showChatPage()
@@ -97,11 +101,13 @@ function showChatPage() {
 function showSignup() {
   loginForm.style.display = 'none'
   signupForm.style.display = 'block'
+  loginError.textContent = ''
 }
 
 function showLogin() {
   signupForm.style.display = 'none'
   loginForm.style.display = 'block'
+  signupError.textContent = ''
 }
 
 // ===== Login =====
@@ -115,6 +121,7 @@ loginBtn.addEventListener('click', async function() {
   }
 
   loginBtn.textContent = 'Logging in...'
+  loginError.textContent = ''
 
   try {
     const response = await fetch(BACKEND + '/api/login', {
@@ -154,6 +161,7 @@ signupBtn.addEventListener('click', async function() {
   }
 
   signupBtn.textContent = 'Creating account...'
+  signupError.textContent = ''
 
   try {
     const response = await fetch(BACKEND + '/api/signup', {
@@ -244,7 +252,6 @@ async function openChat(chatId) {
   currentChatId = chatId
   chatBox.innerHTML = ''
 
-  // Update active state
   document.querySelectorAll('.chat-item').forEach(item => {
     item.classList.remove('active')
     if (item.dataset.chatId === chatId) {
@@ -292,10 +299,13 @@ async function deleteChat(chatId, event) {
   }
 }
 
-// ===== New Chat Button =====
+// ===== New Chat =====
 newChatBtn.addEventListener('click', function() {
   currentChatId = null
   chatBox.innerHTML = ''
+  pendingImage = null
+  imagePreviewBar.style.display = 'none'
+  userInput.placeholder = 'Type or speak...'
   document.querySelectorAll('.chat-item').forEach(item => {
     item.classList.remove('active')
   })
@@ -308,8 +318,7 @@ personalityBtns.forEach(function(btn) {
     personalityBtns.forEach(b => b.classList.remove('active'))
     btn.classList.add('active')
     currentPersonality = btn.dataset.personality
-    const selected = personalities[currentPersonality]
-    botName.textContent = selected.name
+    botName.textContent = personalities[currentPersonality].name
   })
 })
 
@@ -344,6 +353,9 @@ userInput.addEventListener('keypress', function(e) {
 // ===== Clear Button =====
 clearBtn.addEventListener('click', function() {
   chatBox.innerHTML = ''
+  pendingImage = null
+  imagePreviewBar.style.display = 'none'
+  userInput.placeholder = 'Type or speak...'
   window.speechSynthesis.cancel()
   showWelcome(personalities[currentPersonality].welcome)
 })
@@ -366,33 +378,54 @@ cameraBtn.addEventListener('click', function() {
   fileInput.click()
 })
 
+// ===== File Selected — Show Preview =====
 fileInput.addEventListener('change', function(e) {
   const file = e.target.files[0]
   if (!file) return
 
   const reader = new FileReader()
   reader.onload = function(event) {
-    const imageData = event.target.result
+    pendingImage = event.target.result
+    previewImg.src = pendingImage
+    imagePreviewBar.style.display = 'flex'
+    userInput.placeholder = 'Ask something about this image...'
+    userInput.focus()
+  }
+  reader.readAsDataURL(file)
+  fileInput.value = ''
+})
 
+// ===== Remove Image =====
+removeImageBtn.addEventListener('click', function() {
+  pendingImage = null
+  imagePreviewBar.style.display = 'none'
+  userInput.placeholder = 'Type or speak...'
+})
+
+// ===== Send Message =====
+function sendMessage() {
+  const message = userInput.value.trim()
+
+  if (pendingImage) {
+    // Show image + text in chat
     const wrapper = document.createElement('div')
     wrapper.classList.add('message-wrapper', 'user-wrapper')
-
     const messageDiv = document.createElement('div')
     messageDiv.classList.add('message', 'user-message')
 
     const img = document.createElement('img')
-    img.src = imageData
+    img.src = pendingImage
     img.style.maxWidth = '200px'
     img.style.borderRadius = '12px'
-
-    const caption = document.createElement('p')
-    caption.textContent = '📷 Image sent — asking AI...'
-    caption.style.fontSize = '12px'
-    caption.style.marginTop = '6px'
-    caption.style.color = '#a0a0c0'
-
     messageDiv.appendChild(img)
-    messageDiv.appendChild(caption)
+
+    if (message) {
+      const p = document.createElement('p')
+      p.textContent = message
+      p.style.marginTop = '6px'
+      p.style.fontSize = '14px'
+      messageDiv.appendChild(p)
+    }
 
     const timeDiv = document.createElement('div')
     timeDiv.classList.add('timestamp')
@@ -403,16 +436,17 @@ fileInput.addEventListener('change', function(e) {
     chatBox.appendChild(wrapper)
     chatBox.scrollTop = chatBox.scrollHeight
 
+    userInput.value = ''
+    imagePreviewBar.style.display = 'none'
+    userInput.placeholder = 'Type or speak...'
     addMessage('AI is analyzing your image...', 'loading')
-    callBackendWithImage(imageData)
-  }
-  reader.readAsDataURL(file)
-  fileInput.value = ''
-})
 
-// ===== Send Message =====
-function sendMessage() {
-  const message = userInput.value.trim()
+    const imageToSend = pendingImage
+    pendingImage = null
+    callBackendWithImageAndText(imageToSend, message)
+    return
+  }
+
   if (message === '') return
   addMessage(message, 'user')
   userInput.value = ''
@@ -466,7 +500,7 @@ function addMessage(text, sender) {
   chatBox.scrollTop = chatBox.scrollHeight
 }
 
-// ===== Call Backend =====
+// ===== Call Backend Text =====
 async function callBackend(message) {
   const selectedPrompt = personalities[currentPersonality].prompt
 
@@ -491,13 +525,10 @@ async function callBackend(message) {
     if (data.reply) {
       addMessage(data.reply, 'ai')
       speakText(data.reply)
-
-      // Update chatId and reload sidebar
       if (!currentChatId && data.chatId) {
         currentChatId = data.chatId
         loadChats()
       }
-
     } else if (data.error) {
       addMessage('Error: ' + data.error, 'ai')
     }
@@ -509,8 +540,8 @@ async function callBackend(message) {
   }
 }
 
-// ===== Call Backend With Image =====
-async function callBackendWithImage(imageBase64) {
+// ===== Call Backend Image + Text =====
+async function callBackendWithImageAndText(imageBase64, text) {
   try {
     const response = await fetch(BACKEND + '/api/chat-image', {
       method: 'POST',
@@ -520,6 +551,7 @@ async function callBackendWithImage(imageBase64) {
       },
       body: JSON.stringify({
         image: imageBase64,
+        message: text || 'Analyze this image',
         personality: personalities[currentPersonality].prompt,
         chatId: currentChatId
       })
@@ -532,12 +564,10 @@ async function callBackendWithImage(imageBase64) {
     if (data.reply) {
       addMessage(data.reply, 'ai')
       speakText(data.reply)
-
       if (!currentChatId && data.chatId) {
         currentChatId = data.chatId
         loadChats()
       }
-
     } else if (data.error) {
       addMessage('Error: ' + data.error, 'ai')
     }
@@ -545,7 +575,7 @@ async function callBackendWithImage(imageBase64) {
   } catch (error) {
     const loading = document.querySelector('.loading')
     if (loading) loading.remove()
-    addMessage('Cannot analyze image right now!', 'ai')
+    addMessage('Cannot analyze image!', 'ai')
   }
 }
 

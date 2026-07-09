@@ -55,9 +55,7 @@
         <button id="new-chat-btn">+ New</button>
       </div>
 
-      <div class="chat-list" id="chat-list">
-        <!-- Chat history items here -->
-      </div>
+      <div class="chat-list" id="chat-list"></div>
 
       <div class="sidebar-footer">
         <p id="user-name-display">👤 User</p>
@@ -90,14 +88,26 @@
       <!-- Messages -->
       <div class="chat-box" id="chat-box"></div>
 
-      <!-- Input -->
-      <div class="chat-input">
-        <button id="voice-btn" title="Voice">🎤</button>
-        <button id="camera-btn" title="Image">📷</button>
-        <button id="mute-btn" title="Mute">🔊</button>
-        <input type="file" id="file-input" accept="image/*" style="display:none"/>
-        <input type="text" id="user-input" placeholder="Type or speak..."/>
-        <button id="send-btn">Send ➤</button>
+      <!-- Input Area -->
+      <div class="chat-input-area">
+
+        <!-- Image Preview Bar -->
+        <div class="image-preview-bar" id="image-preview-bar" style="display:none">
+          <img id="preview-img" src="" alt="preview"/>
+          <span id="preview-text">Image ready — type your question below</span>
+          <button id="remove-image-btn">✕</button>
+        </div>
+
+        <!-- Input Row -->
+        <div class="chat-input">
+          <button id="voice-btn" title="Voice">🎤</button>
+          <button id="camera-btn" title="Image">📷</button>
+          <button id="mute-btn" title="Mute">🔊</button>
+          <input type="file" id="file-input" accept="image/*" style="display:none"/>
+          <input type="text" id="user-input" placeholder="Type or speak..."/>
+          <button id="send-btn">Send ➤</button>
+        </div>
+
       </div>
 
     </div>
